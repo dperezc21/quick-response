@@ -1,26 +1,23 @@
 package com.service.quick_response;
 
+import com.service.quick_response.models.QuickResponseModel;
 import com.service.quick_response.services.QRCodeGenerator;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
 @RequestMapping("/qr")
 public class QRController {
-    private static final String QR_CODE_IMAGE_PATH = "./src/main/resources/static/img/QRCode.png";
-    @Autowired private QRCodeGenerator qrCodeGenerator;
 
-    @GetMapping("/generate/{text}")
-    public ResponseEntity generateQr(@PathVariable String text) {
+    @PostMapping("/generate")
+    public ResponseEntity<byte[]> generateQr(@RequestBody QuickResponseModel quickResponseModel) {
         try {
-            qrCodeGenerator.generateQrCode(text, 300, 300, QR_CODE_IMAGE_PATH);
+            QRContext qrContext = new QRContext(new QRCodeGenerator());
+            qrContext.runStrategy(quickResponseModel.getMessage(), quickResponseModel.getImageName());
+            return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(qrContext.getQRFileGenerated());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
+            return ResponseEntity.internalServerError().body(null);
         }
-        return ResponseEntity.ok("QR generated");
     }
 }
